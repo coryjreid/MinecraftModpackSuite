@@ -23,6 +23,9 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
+/**
+ * A custom Jackson deserializer for deserializing Addons in a minecraftinstance.json file.
+ */
 public class AddonDeserializer extends StdDeserializer<Addon> {
     public AddonDeserializer() {
         this(null);

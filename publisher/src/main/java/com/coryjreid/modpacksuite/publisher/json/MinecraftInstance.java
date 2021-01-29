@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.collect.ImmutableList;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 
@@ -56,6 +57,6 @@ public class MinecraftInstance {
     }
 
     public List<Addon> getAddons() {
-        return mAddons;
+        return ImmutableList.copyOf(mAddons);
     }
 }
