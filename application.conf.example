@@ -1,0 +1,23 @@
+# Path to the Minecraft instance/installation root directory (contains config/, mods/, minecraftinstance.json, etc.)
+# Example: /opt/minecraft/logicraft
+minecraftInstanceRoot = "/path/to/a/folder"
+
+# Mod IDs for mods that need special handling.
+# Note: Any mods not listed here are considered "common" and exist on both the client and server.
+modExceptions {
+    # These mods should only exist on the client
+    # Example: clientOnly = [1234, 2345, 3456]
+    clientOnly = []
+
+    # These mods should only exist on the server
+    # Example: serverOnly = [4567, 5678]
+    serverOnly = []
+
+    # These mods are used during development and should not be included in the pack at all
+    # Example: devOnly = [6789]
+    devOnly = []
+}
+
+# Strings for files which should be excluded from the published modpack
+# Example: "config/worldstripper-common.toml"
+fileExclusions = []
