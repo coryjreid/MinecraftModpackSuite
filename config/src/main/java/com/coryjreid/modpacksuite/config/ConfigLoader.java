@@ -33,8 +33,8 @@ import com.typesafe.config.ConfigFactory;
  * Loads {@link Config}s.
  */
 public final class ConfigLoader {
+    public static final String DEFAULT_CONFIG_FILE_NAME = "application.conf";
     private static final String CONFIG_FILE_ARGUMENT_KEY = "configFile";
-    private static final String DEFAULT_CONFIG_FILE_NAME = "application.conf";
 
     private static final JSAP sArgumentParser = new JSAP();
 
@@ -63,9 +63,14 @@ public final class ConfigLoader {
      * via command line arguments.
      *
      * @param programArgs the string array of program arguments to parse (never {@code null})
+     * @param killProgram {@code true} if the program should terminate on error, {@code false} to throw an exception
+     *     which can be handled manually
      * @return the loaded {@link Config}
+     * @throws IllegalStateException if the configuration file could not be loaded
      */
-    public static Config loadConfig(final String[] programArgs) {
+    public static Config loadConfig(final String[] programArgs, final boolean killProgram)
+        throws IllegalStateException {
+
         Preconditions.checkNotNull(programArgs, "programArgs cannot be null");
 
         final Path configFile = Paths.get(programArgs.length == 0
@@ -75,9 +80,15 @@ public final class ConfigLoader {
         if (Files.exists(configFile)) {
             return ConfigFactory.parseFile(configFile.toFile());
         } else {
-            System.err.println("ERROR: A configuration file cannot be found!");
-            System.err.println("Create '" + configFile.toAbsolutePath() + "' or specify a path to a config file");
-            System.exit(1);
+            if (killProgram) {
+                System.err.println("ERROR: A configuration file cannot be found!");
+                System.err.println("Create '" + configFile.toAbsolutePath() + "' or specify a path to a config file");
+                System.exit(1);
+            } else {
+                throw new IllegalStateException("Configuration file '"
+                    + configFile.toAbsolutePath()
+                    + "' could not be loaded");
+            }
             return null;
         }
     }

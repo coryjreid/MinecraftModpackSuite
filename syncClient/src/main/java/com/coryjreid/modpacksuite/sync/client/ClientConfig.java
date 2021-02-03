@@ -16,7 +16,6 @@
  */
 package com.coryjreid.modpacksuite.sync.client;
 
-import com.coryjreid.modpacksuite.config.ConfigLoader;
 import com.typesafe.config.Config;
 
 /**
@@ -25,8 +24,8 @@ import com.typesafe.config.Config;
 public class ClientConfig {
     private final Config mConfig;
 
-    public ClientConfig(final String[] programArgs) {
-        mConfig = ConfigLoader.loadConfig(programArgs);
+    public ClientConfig(final Config config) {
+        mConfig = config;
     }
 
     /**

@@ -16,14 +16,24 @@
  */
 package com.coryjreid.modpacksuite.sync.client;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
+import com.coryjreid.modpacksuite.config.ConfigLoader;
+import com.coryjreid.modpacksuite.sync.client.gui.ConfigurationGenerationDialog;
 import com.github.fracpete.processoutput4j.core.StreamingProcessOutputType;
 import com.github.fracpete.processoutput4j.core.StreamingProcessOwner;
 import com.github.fracpete.processoutput4j.output.StreamingProcessOutput;
 import com.github.fracpete.rsync4j.RSync;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,11 +62,6 @@ public class SyncClient extends Application {
      */
     private static final TextArea sConsole = new TextArea();
 
-    /**
-     * The {@link Thread} to do the actual synchronization.
-     */
-    private static Thread sSyncThread;
-
     static {
         // Mods
         sTransferMap.put("mods/**", "mods");
@@ -74,29 +79,17 @@ public class SyncClient extends Application {
     }
 
     @Override
-    public void start(final Stage primaryStage) {
-        primaryStage.setTitle("Minecraft Server Sync Tool");
-        sConsole.setEditable(false);
-
-        final StackPane root = new StackPane();
-        root.getChildren().add(sConsole);
-        primaryStage.setScene(new Scene(root, 600, 200));
-        primaryStage.show();
-
-        sSyncThread.start();
-    }
-
-    public static void main(final String[] args) {
-        final ClientConfig config = new ClientConfig(args);
-        sSyncThread = new Thread(() -> {
+    public void start(final Stage primaryStage) throws IOException {
+        final ClientConfig clientConfig = new ClientConfig(loadOrCreateConfig());
+        final Thread syncThread = new Thread(() -> {
             sTransferMap.forEach((key, value) -> {
                 final RSync rSync =
                     new RSync()
                         .checksum(true)
                         .verbose(true)
                         .recursive(true)
-                        .source(config.getRsyncAddress() + key)
-                        .destination(config.getMinecraftPath() + value);
+                        .source(clientConfig.getRsyncAddress() + key)
+                        .destination(clientConfig.getMinecraftPath() + value);
 
                 try {
                     new StreamingProcessOutput(new TextAreaOutput()).monitor(rSync.builder());
@@ -107,11 +100,68 @@ public class SyncClient extends Application {
             });
             Platform.exit();
         });
-        sSyncThread.setDaemon(true);
+        syncThread.setDaemon(true);
 
+        primaryStage.setTitle("Minecraft Server Sync Tool");
+        sConsole.setEditable(false);
+
+        final StackPane root = new StackPane();
+        root.getChildren().add(sConsole);
+        primaryStage.setScene(new Scene(root, 600, 200));
+        primaryStage.show();
+
+        syncThread.start();
+    }
+
+    public static void main(final String[] args) {
         launch(args);
     }
 
+    /**
+     * Creates a {@link Config} by doing one of the following:
+     * <ul>
+     *     <li>Finding the {@link ConfigLoader#DEFAULT_CONFIG_FILE_NAME} file in the default location</li>
+     *     <li>Finding the {@link ConfigLoader#DEFAULT_CONFIG_FILE_NAME} from the command line arguments</li>
+     *     <li>Prompting the user for the values and creating a configuration in the default location</li>
+     * </ul>
+     * <br><br>
+     * The default location for the config file is right next to the JAR file.
+     *
+     * @return the {@link Config} instance
+     * @throws IOException if saving a new configuration file in the default location occurs
+     */
+    private Config loadOrCreateConfig() throws IOException {
+        final String[] args = getParameters().getRaw().toArray(new String[] {});
+        Config config;
+
+        try {
+            config = ConfigLoader.loadConfig(args, false);
+        } catch (final IllegalStateException ignoredException) {
+            sLogger.error("Configuration file not found! Prompting user for values...");
+            final ConfigurationGenerationDialog configurationGenerationDialog = new ConfigurationGenerationDialog();
+            final Optional<Map<String, String>> result = configurationGenerationDialog.showAndWait();
+
+            if (!result.isPresent()) {
+                System.exit(1);
+            }
+
+            config = ConfigFactory.parseMap(result.get());
+
+            Files.write(
+                Paths.get(ConfigLoader.DEFAULT_CONFIG_FILE_NAME),
+                Collections.singleton(config.root().render(ConfigRenderOptions
+                    .defaults()
+                    .setOriginComments(false)
+                    .setComments(false)
+                    .setFormatted(true))));
+        }
+
+        return config;
+    }
+
+    /**
+     * A {@link StreamingProcessOwner} implementation which writes to a {@link TextArea}.
+     */
     private static class TextAreaOutput implements StreamingProcessOwner {
 
         @Override
