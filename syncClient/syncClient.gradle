@@ -29,5 +29,6 @@ dependencies {
 
 shadowJar {
     archiveClassifier.set('')
-    archiveBaseName.set('SyncClient')
+    archiveBaseName.set('ServerSyncClient')
+    archiveVersion.set(getArchiveVersion().get().replace('-SNAPSHOT', ''))
 }
