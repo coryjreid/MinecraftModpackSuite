@@ -16,6 +16,8 @@
  */
 package com.coryjreid.modpacksuite.sync.client.gui;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,7 +107,8 @@ public class ConfigurationGenerationDialog extends Dialog<Map<String, String>> {
         mMinecraftInstanceRootField.setPromptText("C:\\path\\to\\folder");
         mMinecraftInstanceRootField.setStyle("-fx-prompt-text-fill: derive(-fx-control-inner-background,-30%)");
         mMinecraftInstanceRootFieldValid = Bindings.createBooleanBinding(
-            () -> !mMinecraftInstanceRootField.getText().isEmpty(),
+            () -> !mMinecraftInstanceRootField.getText().isEmpty()
+                && Files.exists(Paths.get(mMinecraftInstanceRootField.getText())),
             mMinecraftInstanceRootField.textProperty());
 
         mServerHostNameField.setPromptText("example.com");
@@ -117,7 +120,7 @@ public class ConfigurationGenerationDialog extends Dialog<Map<String, String>> {
         mServerPortField.setPromptText("25000");
         mServerPortField.setStyle("-fx-prompt-text-fill: derive(-fx-control-inner-background,-30%)");
         mServerPortFieldValid = Bindings.createBooleanBinding(
-            () -> !mServerPortField.getText().isEmpty(),
+            () -> !mServerPortField.getText().isEmpty() && isInteger(mServerPortField.getText()),
             mServerPortField.textProperty());
 
         mServerPathField.setPromptText("path");
@@ -125,5 +128,15 @@ public class ConfigurationGenerationDialog extends Dialog<Map<String, String>> {
         mServerPathFieldValid = Bindings.createBooleanBinding(
             () -> !mServerPathField.getText().isEmpty(),
             mServerPathField.textProperty());
+    }
+
+    private boolean isInteger(final String string) {
+        try {
+            Integer.parseInt(string);
+        } catch (final Exception ignoredException) {
+            return false;
+        }
+
+        return true;
     }
 }
