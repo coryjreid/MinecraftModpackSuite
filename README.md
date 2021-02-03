@@ -5,12 +5,9 @@ multiple components which work in tandem to accomplish the goal of publishing an
 
 ## Components
 
-### Publisher
+### SyncClient
 
-Parses a Minecraft instance folder as the "modpack source" and generates artifacts to publish for distributing the 
-modpack.
-
-### Updater
-
-A command line tool which is run either by the user or via an automated means to update a local installation of 
-Minecraft.
+A simple application which runs on client computers to connect to a rsync server and pull down the served files. It
+requires a simple config file to specify where to place the synced files/folders and the server connection information.
+From there it should launch as a "prelaunch command" on the MultiMC instance which is managing that Minecraft
+installation.
