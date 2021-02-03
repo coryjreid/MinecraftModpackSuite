@@ -21,7 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -55,7 +55,7 @@ public class SyncClient extends Application {
      * A map containing a "source pattern" to "destination pattern" mapping. Please see rsync documentation for more
      * information.
      */
-    private static final Map<String, String> sTransferMap = new HashMap<>();
+    private static final Map<String, String> sTransferMap = new LinkedHashMap<>();
 
     /**
      * The {@link TextArea} for the program's output.
@@ -64,18 +64,21 @@ public class SyncClient extends Application {
 
     static {
         // Mods
-        sTransferMap.put("mods/**", "mods");
+        // Important: The order is important as is the inclusion of ** on clientmods/. The ** wildcard ensures that
+        // the "force delete" isn't triggered when syncing client mods so that we don't accidentally delete all the
+        // required server mods
+        sTransferMap.put("mods/", "mods");
         sTransferMap.put("clientmods/**", "mods");
 
         // Config
-        sTransferMap.put("config/**", "config");
-        sTransferMap.put("defaultconfigs/**", "defaultconfigs");
+        sTransferMap.put("config/", "config");
+        sTransferMap.put("defaultconfigs/", "defaultconfigs");
 
         // KubeJS
-        sTransferMap.put("kubejs/**", "kubejs");
+        sTransferMap.put("kubejs/", "kubejs");
 
         // Resourcepacks
-        sTransferMap.put("resourcepacks/**", "resourcepacks");
+        sTransferMap.put("resourcepacks/", "resourcepacks");
     }
 
     @Override
@@ -85,12 +88,13 @@ public class SyncClient extends Application {
             sTransferMap.forEach((key, value) -> {
                 final RSync rSync =
                     new RSync()
+                        .delete(true)
+                        .force(true)
                         .checksum(true)
                         .verbose(true)
                         .recursive(true)
                         .source(clientConfig.getRsyncAddress() + key)
                         .destination(clientConfig.getMinecraftPath() + value);
-
                 try {
                     new StreamingProcessOutput(new TextAreaOutput()).monitor(rSync.builder());
                 } catch (final Exception exception) {
