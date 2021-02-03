@@ -14,28 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.coryjreid.modpacksuite.publisher;
 
-import java.lang.invoke.MethodHandles;
+plugins {
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
+}
 
-import com.coryjreid.modpacksuite.config.ConfigLoader;
+mainClassName = 'com.coryjreid.modpacksuite.sync.server.SyncServer'
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+dependencies {
+    implementation project(':config')
+}
 
-public final class Publisher {
-    private static final Logger sLogger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    /**
-     * Prevent instantiation.
-     */
-    private Publisher() {
-        // Nothing to do.
-    }
-
-    public static void main(final String[] args) {
-        final PublisherConfig config = new PublisherConfig(ConfigLoader.loadConfig(args));
-
-
-    }
+shadowJar {
+    archiveClassifier.set('')
+    archiveBaseName.set('SyncServer')
 }

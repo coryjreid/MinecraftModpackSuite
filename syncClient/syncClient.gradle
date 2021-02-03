@@ -19,3 +19,15 @@ plugins {
     id 'application'
     id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
+
+mainClassName = 'com.coryjreid.modpacksuite.sync.client.SyncClient'
+
+dependencies {
+    implementation project(':config')
+    implementation 'com.github.fracpete:rsync4j-all:3.2.3-1'
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    archiveBaseName.set('SyncClient')
+}

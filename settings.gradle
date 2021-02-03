@@ -19,9 +19,9 @@
 rootProject.name = 'MinecraftModpackSuite'
 
 // Include/define subprojects
-include 'publisher'
-include 'updater'
 include 'config'
+include 'syncServer'
+include 'syncClient'
 
 // Rename the root project build file
 rootProject.buildFileName = 'MinecraftModpackSuite.gradle'
