@@ -53,7 +53,7 @@ public class SyncClient extends Application {
 
     /**
      * A map containing a "source pattern" to "destination pattern" mapping. Please see rsync documentation for more
-     * information.
+     * information. Note: the "mods" folder is not handled using this map
      */
     private static final Map<String, String> sTransferMap = new LinkedHashMap<>();
 
@@ -63,13 +63,6 @@ public class SyncClient extends Application {
     private static final TextArea sConsole = new TextArea();
 
     static {
-        // Mods
-        // Important: The order is important as is the inclusion of ** on clientmods/. The ** wildcard ensures that
-        // the "force delete" isn't triggered when syncing client mods so that we don't accidentally delete all the
-        // required server mods
-        sTransferMap.put("mods/", "mods");
-        sTransferMap.put("clientmods/**", "mods");
-
         // Config
         sTransferMap.put("config/", "config");
         sTransferMap.put("defaultconfigs/", "defaultconfigs");
@@ -85,23 +78,25 @@ public class SyncClient extends Application {
     public void start(final Stage primaryStage) throws IOException {
         final ClientConfig clientConfig = new ClientConfig(loadOrCreateConfig());
         final Thread syncThread = new Thread(() -> {
-            sTransferMap.forEach((key, value) -> {
-                final RSync rSync =
-                    new RSync()
-                        .delete(true)
-                        .force(true)
-                        .checksum(true)
-                        .verbose(true)
-                        .recursive(true)
-                        .source(clientConfig.getRsyncAddress() + key)
-                        .destination(clientConfig.getMinecraftPath() + value);
-                try {
-                    new StreamingProcessOutput(new TextAreaOutput()).monitor(rSync.builder());
-                } catch (final Exception exception) {
-                    sLogger.error("Writing the process output failed", exception);
-                    Platform.exit();
+            try {
+                // We want to sync the mods using multiple source roots
+                final RSync modsRsync = getRsyncInstance(new String[] {
+                    clientConfig.getRsyncAddress() + "mods/",
+                    clientConfig.getRsyncAddress() + "clientmods/"
+                }, clientConfig.getMinecraftPath() + "mods");
+                new StreamingProcessOutput(new TextAreaOutput()).monitor(modsRsync.builder());
+
+                // Handle everything else
+                for (final Map.Entry<String, String> entry : sTransferMap.entrySet()) {
+                    final RSync rsync = getRsyncInstance(
+                        clientConfig.getRsyncAddress() + entry.getKey(),
+                        clientConfig.getMinecraftPath() + entry.getValue());
+
+                    new StreamingProcessOutput(new TextAreaOutput()).monitor(rsync.builder());
                 }
-            });
+            } catch (final Exception exception) {
+                sLogger.error("Writing the process output failed", exception);
+            }
             Platform.exit();
         });
         syncThread.setDaemon(true);
@@ -161,6 +156,18 @@ public class SyncClient extends Application {
         }
 
         return config;
+    }
+
+    private static RSync getRsyncInstance(final String source, final String destination) {
+        return getRsyncDefaultValues().source(source).destination(destination);
+    }
+
+    private static RSync getRsyncInstance(final String[] sources, final String destination) {
+        return getRsyncDefaultValues().sources(sources).destination(destination);
+    }
+
+    private static RSync getRsyncDefaultValues() {
+        return new RSync().delete(true).force(true).checksum(true).verbose(true).recursive(true);
     }
 
     /**
