@@ -84,7 +84,9 @@ public class SyncClient extends Application {
                     clientConfig.getRsyncAddress() + "mods/",
                     clientConfig.getRsyncAddress() + "clientmods/"
                 }, clientConfig.getMinecraftPath() + "mods");
-                new StreamingProcessOutput(new TextAreaOutput()).monitor(modsRsync.builder());
+                final ProcessBuilder modsRsyncProcessBuilder = modsRsync.builder();
+                new StreamingProcessOutput(new TextAreaOutput()).monitor(modsRsyncProcessBuilder);
+                new StreamingProcessOutput(new ConsoleLogger()).monitor(modsRsyncProcessBuilder);
 
                 // Handle everything else
                 for (final Map.Entry<String, String> entry : sTransferMap.entrySet()) {
@@ -92,7 +94,9 @@ public class SyncClient extends Application {
                         clientConfig.getRsyncAddress() + entry.getKey(),
                         clientConfig.getMinecraftPath() + entry.getValue());
 
-                    new StreamingProcessOutput(new TextAreaOutput()).monitor(rsync.builder());
+                    final ProcessBuilder rsyncProcessBuilder = rsync.builder();
+                    new StreamingProcessOutput(new TextAreaOutput()).monitor(rsyncProcessBuilder);
+                    new StreamingProcessOutput(new ConsoleLogger()).monitor(rsyncProcessBuilder);
                 }
             } catch (final Exception exception) {
                 sLogger.error("Writing the process output failed", exception);
@@ -167,7 +171,7 @@ public class SyncClient extends Application {
     }
 
     private static RSync getRsyncDefaultValues() {
-        return new RSync().delete(true).force(true).checksum(true).verbose(true).recursive(true);
+        return new RSync().delete(true).force(true).perms(false).checksum(true).verbose(true).recursive(true);
     }
 
     /**
@@ -182,9 +186,27 @@ public class SyncClient extends Application {
 
         @Override
         public void processOutput(final String line, final boolean stdout) {
-            Platform.runLater(() -> {
-                sConsole.appendText(line + "\n");
-            });
+            Platform.runLater(() -> sConsole.appendText(line + "\n"));
+        }
+    }
+
+    /**
+     * A {@link StreamingProcessOwner} implementation which writes to STDOUT.
+     */
+    private static class ConsoleLogger implements StreamingProcessOwner {
+
+        @Override
+        public StreamingProcessOutputType getOutputType() {
+            return StreamingProcessOutputType.BOTH;
+        }
+
+        @Override
+        public void processOutput(String line, boolean stdout) {
+            if (stdout) {
+                sLogger.info(line);
+            } else {
+                sLogger.error(line);
+            }
         }
     }
 }

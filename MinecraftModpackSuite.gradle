@@ -17,14 +17,14 @@
 
 allprojects {
     group = 'com.coryjreid'
-    version = '1.0.1-SNAPSHOT'
+    version = '1.0.2-SNAPSHOT'
 }
 
 subprojects {
     apply plugin: 'java'
 
     repositories {
-        jcenter()
+        mavenCentral()
     }
 
     dependencies {
