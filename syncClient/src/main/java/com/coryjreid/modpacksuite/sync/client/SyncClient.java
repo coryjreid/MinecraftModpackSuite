@@ -93,7 +93,10 @@ public class SyncClient extends Application {
                     final RSync rsync = getRsyncInstance(
                         clientConfig.getRsyncAddress() + entry.getKey(),
                         clientConfig.getMinecraftPath() + entry.getValue());
-
+                    if (entry.getKey().equals("config/")) {
+                        sLogger.info("Excluding 'jei' from changes");
+                        rsync.exclude("jei");
+                    }
                     final ProcessBuilder rsyncProcessBuilder = rsync.builder();
                     new StreamingProcessOutput(new TextAreaOutput()).monitor(rsyncProcessBuilder);
                     new StreamingProcessOutput(new ConsoleLogger()).monitor(rsyncProcessBuilder);
